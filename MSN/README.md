@@ -12,3 +12,7 @@ Please unzip the `val.zip` and `complete.zip` within the `data`.
 - We do not need to use visdom package.  
 - The visdom content in the `train.py` and `val.py` have already been deleted.  
 - For convenience, in `dataset.py`, we set the train dataset as the validation dataset.
+### RUN IT!
+Use `train.py` to train and use `val.py` to validate. Actually two of them use the same dataset (*val*)  
+Please notice: to reduce the batch size, it is suggested that you could set `--num_points` as the multiples of 1024, like:  
+`train.py --num_points 2048`  
