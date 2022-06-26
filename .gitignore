@@ -1,0 +1,15 @@
+MSN/data/
+MSN/trained_model/
+MSN/emd/build/
+MSN/emd/dist/
+MSN/emd/emd.egg-info/
+MSN/expansion_penalty/build/
+MSN/expansion_penalty/dist/
+MSN/expansion_penalty/expansion_penalty.egg-info/
+MSN/MDS/build/
+MSN/MDS/dist/
+MSN/MDS/MDS.egg-info/
+SoftPool/pytorch/build/
+SoftPool/pytorch/dist/
+SoftPool/pytorch/SoftPool.egg-info/
+MSN/log/
