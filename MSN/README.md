@@ -5,12 +5,12 @@ Please install Pytorch and CUDA and use `pip` to install `Open3D`. All necessary
 For high-level Pytorch, please revise all `AT_CHECK` to `TORCH_CHECK` in **/MDS/MDS.cpp**.  
 For installing:  
 `
-cd emd  
-python3 setup.py install  
-cd expansion_penalty  
-python3 setup.py install  
-cd MDS  
-python3 setup.py install  
+cd emd  <br>
+python3 setup.py install  <br>
+cd expansion_penalty  <br>
+python3 setup.py install  <br>
+cd MDS  <br>
+python3 setup.py install  <br>
 `
 ### Dictionary Structure
 Please download data [here](https://drive.google.com/drive/folders/1X143kUwtRtoPFxNRvUk9LuPlsf1lLKI7)  
