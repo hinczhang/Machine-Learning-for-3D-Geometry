@@ -20,7 +20,19 @@ Please unzip the `val.zip` and `complete.zip` within the `data`.
 ### Some changes <img src="https://img.shields.io/badge/IMPORTANT-!!!-red"/>
 - We do not need to use visdom package.  
 - The visdom content in the `train.py` and `val.py` have already been deleted.  
-- For convenience, in `dataset.py`, we set the train dataset as the validation dataset.
+- For convenience, in `dataset.py`, we set the train dataset as the validation dataset.  
+**27.06.2022**  
+`train.py`  
+Line 22: `default=25` to `default=2`  
+Line 24: `default = 8192` to `default = 1024`  
+Line 68: add `dataset = torch.utils.data.Subset(dataset, range(50))`  
+Line 72: add `dataset_test = torch.utils.data.Subset(dataset_test, range(10))`  
+The reason for this revision is to reduce the computing power.  
+`model.py`  
+Line 10: add `from SoftPool import soft_pool2d, SoftPool2d`  
+Line 58: add `self.pool = SoftPool2d(kernel_size=(1,1), stride=(1,1))`  
+Line 66: add `x = self.pool(x)`  
+This revision mainly works for testing importing SoftPool.
 ### RUN IT!
 Use `train.py` to train and use `val.py` to validate. Actually two of them use the same dataset (*val*)  
 Please notice: to reduce the batch size, it is suggested that you could set `--num_points` as the multiples of 1024, like:  

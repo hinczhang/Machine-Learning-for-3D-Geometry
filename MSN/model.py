@@ -7,6 +7,7 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 import sys
+from SoftPool import soft_pool2d, SoftPool2d
 sys.path.append("./expansion_penalty/")
 import expansion_penalty_module as expansion
 sys.path.append("./MDS/")
@@ -54,7 +55,7 @@ class PointNetfeat(nn.Module):
         self.bn1 = torch.nn.BatchNorm1d(64)
         self.bn2 = torch.nn.BatchNorm1d(128)
         self.bn3 = torch.nn.BatchNorm1d(1024)
-
+        self.pool = SoftPool2d(kernel_size=(1,1), stride=(1,1))
         self.num_points = num_points
         self.global_feat = global_feat
     def forward(self, x):
@@ -62,6 +63,7 @@ class PointNetfeat(nn.Module):
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.bn3(self.conv3(x))
+        x = self.pool(x)
         x,_ = torch.max(x, 2)
         x = x.view(-1, 1024)
         return x
