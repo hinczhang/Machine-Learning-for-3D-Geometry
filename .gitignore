@@ -14,3 +14,4 @@ SoftPool/pytorch/dist/
 SoftPool/pytorch/SoftPool.egg-info/
 MSN/log/
 MSN/__pycache__/
+SoftPool/main/data/

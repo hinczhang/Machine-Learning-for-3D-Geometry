@@ -55,15 +55,21 @@ class PointNetfeat(nn.Module):
         self.bn1 = torch.nn.BatchNorm1d(64)
         self.bn2 = torch.nn.BatchNorm1d(128)
         self.bn3 = torch.nn.BatchNorm1d(1024)
-        self.pool = SoftPool2d(kernel_size=(1,1), stride=(1,1))
+        self.pool = SoftPool2d(kernel_size=(2,2), stride=(2,2))
         self.num_points = num_points
         self.global_feat = global_feat
     def forward(self, x):
         batchsize = x.size()[0]
+        print("Origin: ", x.shape)
+        #x = self.pool(x)
         x = F.relu(self.bn1(self.conv1(x)))
+        print("Relu 1: ", x.shape)
         x = F.relu(self.bn2(self.conv2(x)))
+        print("Relu 2: ", x.shape)
         x = self.bn3(self.conv3(x))
-        x = self.pool(x)
+        print("BN 3: ", x.shape)
+        #x = self.pool(x)
+        #print("Softpool: ", x.shape)
         x,_ = torch.max(x, 2)
         x = x.view(-1, 1024)
         return x

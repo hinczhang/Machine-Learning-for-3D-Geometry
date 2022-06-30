@@ -32,7 +32,9 @@ The reason for this revision is to reduce the computing power.
 Line 10: add `from SoftPool import soft_pool2d, SoftPool2d`  
 Line 58: add `self.pool = SoftPool2d(kernel_size=(1,1), stride=(1,1))`  
 Line 66: add `x = self.pool(x)`  
-This revision mainly works for testing importing SoftPool.
+This revision mainly works for testing importing SoftPool.  
+**30.06.2022**  
+Investigate the possible use of STN.  
 ### RUN IT!
 Use `train.py` to train and use `val.py` to validate. Actually two of them use the same dataset (*val*)  
 Please notice: to reduce the batch size, it is suggested that you could set `--num_points` as the multiples of 1024, like:  
