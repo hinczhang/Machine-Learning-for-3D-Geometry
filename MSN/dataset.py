@@ -2,10 +2,10 @@ import open3d as o3d
 import torch
 import numpy as np
 import torch.utils.data as data
+import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import os
 import random
-#from utils import *
 
 def resample_pcd(pcd, n):
     """Drop or duplicate points so that pcd has exactly n points"""
