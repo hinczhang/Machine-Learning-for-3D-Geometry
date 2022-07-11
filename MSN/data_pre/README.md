@@ -5,5 +5,6 @@ The file is about 30GB. Please remember to unzip your sub-data zip files in this
 ### Configure blender  
 Please install your blender via 'snap'. If you use the non_GUI edition, please install `xvfb-run` to creat a virtual screen and run like this:  
 `xvfb-run --auto-servernum --server-args="-screen 0 1600x1024x16" ...`  
+like 'xvfb-run --auto-servernum --server-args="-screen 0 1600x1024x16" blender -b -P render_depth.py ./ShapeNetCore.v1/ train.list ./train 3'
 ### Render
 Use 
