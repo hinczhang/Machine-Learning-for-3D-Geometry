@@ -8,7 +8,9 @@ Please install your blender via 'snap', which means you should download snap fir
 `sudo apt install snapd`  
 Do remember use **blender 2.8**:  
 `sudo snap install blender --channel=2.8/stable --classic`  
-If you use the non_GUI edition (especially in the SSH case), please install `xvfb-run` to creat a virtual screen and run like this:  
+If you use the non_GUI edition (especially in the SSH case), please install `xvfb-run` to creat a virtual screen:  
+`apt install xvfb`  
+and run like this:  
 `xvfb-run --auto-servernum --server-args="-screen 0 1600x1024x16" ...`  
 ### Render
 Use `xvfb-run --auto-servernum --server-args="-screen 0 1600x1024x16" blender -b -P render_depth.py [dataset_dir] [model_list] [output_list] [scan_number]` to run the code [`render_depth.py`](https://github.com/hinczhang/Machine-Learning-for-3D-Geometry/blob/main/MSN/data_pre/render_depth.py). It will create depth images.
