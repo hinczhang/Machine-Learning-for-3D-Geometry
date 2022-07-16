@@ -16,4 +16,5 @@ Please install `OpenEXR` first before run the code:
 > sudo apt-get install libopenexr-dev  
 > sudo apt-get install openexr  
 > pip install OpenEXR  
+  
 Some source codes have already been revised to fit the new OpenEXR API.
