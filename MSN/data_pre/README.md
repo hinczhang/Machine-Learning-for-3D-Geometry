@@ -23,3 +23,5 @@ Please install `OpenEXR` first before run the code:
 > pip install OpenEXR  
   
 Some source codes have already been revised to fit the new OpenEXR API.
+### Performance evaluation
+In CPU: Intel i7 11700 HD & GPU: RTX 3060 (6GB) for 50 frames per model in the rendering period, the average time is about 20 seconds per model. 
