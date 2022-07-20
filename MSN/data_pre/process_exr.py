@@ -29,6 +29,7 @@ import array
 import numpy as np
 import os
 from open3d import *
+import time
 
 
 def read_exr(exr_path, height, width):
@@ -67,6 +68,7 @@ if __name__ == '__main__':
     height = int(intrinsics[1, 2] * 2)
 
     for model_id in model_list:
+        start = time.time()
         depth_dir = os.path.join(args.output_dir, 'depth', model_id)
         pcd_dir = os.path.join(args.output_dir, 'pcd', model_id)
         os.makedirs(depth_dir, exist_ok=True)
@@ -84,3 +86,4 @@ if __name__ == '__main__':
             pcd = geometry.PointCloud()
             pcd.points = utility.Vector3dVector(points)
             io.write_point_cloud(os.path.join(pcd_dir, '%d.pcd' % i), pcd)
+        print('%s done, time=%.4f sec' % (model_id, time.time() - start))
