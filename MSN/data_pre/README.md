@@ -1,5 +1,6 @@
 ## Prepare your data
-*The related codes come from [here](https://github.com/wentaoyuan/pcn/tree/master/render)*
+*The related codes come from [here](https://github.com/wentaoyuan/pcn/tree/master/render)*  
+The purpose is to take random scans for the single model to generate partial information, and then use the original model as a ground truth to train the network.
 ### Download ShapeNetCore.v1
 Please download your dataset `wget https://shapenet.cs.stanford.edu/shapenet/obj-zip/ShapeNetCore.v1.zip`  
 The file is about 30GB. Please remember to unzip your sub-data zip files in this dataset via [`unzip.py`](https://github.com/hinczhang/Machine-Learning-for-3D-Geometry/blob/main/MSN/data_pre/unzip.py)  
@@ -28,4 +29,9 @@ Please install `OpenEXR` first before run the code:
   
 Some source codes have already been revised to fit the new OpenEXR API.
 ### Performance evaluation
-In CPU: Intel i7 11700 HD & GPU: RTX 3060 (6GB) for 50 frames per model in the rendering period, the average time is about 20 seconds per model. 
+In CPU: Intel i7 11700 HD & GPU: RTX 3060 (6GB) for 50 frames per model in the rendering period, the average time is about 20 seconds per model.   
+For the case in DigitalOcean server:  
+- *CPU: Intel(R) Xeon(R) Platinum 8168 CPU @ 2.70GHz*: x4, 8GB  
+- *GPU: Red Hat, Inc. QXL paravirtual graphic card (rev 05)*  
+Cost over three to four more time than the author laptop.  
+Finally generate 7000 models.
