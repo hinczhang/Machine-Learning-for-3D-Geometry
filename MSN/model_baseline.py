@@ -7,8 +7,6 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 import sys
-from SoftPool import soft_pool2d, SoftPool2d
-from LocallyConnected2d import LocallyConnected2d
 sys.path.append("./expansion_penalty/")
 import expansion_penalty_module as expansion
 sys.path.append("./MDS/")
@@ -56,11 +54,7 @@ class PointNetfeat(nn.Module):
         self.bn1 = torch.nn.BatchNorm1d(64)
         self.bn2 = torch.nn.BatchNorm1d(128)
         self.bn3 = torch.nn.BatchNorm1d(1024)
-        self.pool = SoftPool2d(kernel_size=(1,1), stride=(2,2))
-        self.bn4 = torch.nn.BatchNorm1d(1024)
-        self.conv4 = torch.nn.Conv2d(1, 16, 1)
-        
-        self.localConv = LocallyConnected2d(512,1024,5000,True)
+
         self.num_points = num_points
         self.global_feat = global_feat
     def forward(self, x):
@@ -72,25 +66,7 @@ class PointNetfeat(nn.Module):
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.bn3(self.conv3(x))
-        x = self.pool(x)
-        
-        x, _ = torch.sort(x, descending=True, dim = 1)
-        trucated_size = int(x.shape[1]//x.shape[0])
-        t_x = x[0,:trucated_size,:]
-        for pts in x[1:]:
-            t_x = torch.cat((t_x, pts[:trucated_size]))
-        x = t_x
-        x = self.localConv(x)
-        x = x.transpose(2,0)
-        x = torch.nn.functional.interpolate(x,size=batchsize)
-        x = x.transpose(2,0)
-        x = self.bn4(x)
-        print(x.shape)
-        #x = self.bn4(self.conv4(x))
-        
-        
         x,_ = torch.max(x, 2)
-        
         x = x.view(-1, 1024)
         return x
 
@@ -191,7 +167,6 @@ class MSN(nn.Module):
         outs = torch.cat( (outs, id0), 1)
         id1 = torch.ones(partial.shape[0], 1, partial.shape[2]).cuda().contiguous()
         partial = torch.cat( (partial, id1), 1)
-        #print(outs.shape)
         xx = torch.cat( (outs, partial), 2)
 
         resampled_idx = MDS_module.minimum_density_sample(xx[:, 0:3, :].transpose(1, 2).contiguous(), out1.shape[1], mean_mst_dis) 

@@ -12,7 +12,7 @@ import emd_module as emd
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default = './trained_model/network.pth',  help='optional reload model path')
-parser.add_argument('--num_points', type=int, default = 8192,  help='number of points')
+parser.add_argument('--num_points', type=int, default = 1024,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of primitives in the atlas')
 
 opt = parser.parse_args()
