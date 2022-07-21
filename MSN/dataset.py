@@ -18,7 +18,7 @@ class ShapeNet(data.Dataset):
     def __init__(self, train = True, npoints = 8192):
         if train:
             #self.list_path = './data/train.list'
-            self.list_path = './data/val.list'
+            self.list_path = './data/train.list'
         else:
             self.list_path = './data/val.list'
         self.npoints = npoints
@@ -37,7 +37,8 @@ class ShapeNet(data.Dataset):
             return torch.from_numpy(np.array(pcd.points)).float()
         if self.train:
             #partial = read_pcd(os.path.join("./data/train/", model_id + '_%d_denoised.pcd' % scan_id))
-            partial = read_pcd(os.path.join("./data/val/", model_id + '_%d_denoised.pcd' % scan_id))
+            model_path, model_id__ = model_id.split('_')
+            partial = read_pcd(os.path.join("./data/pcd/", model_path, model_id__, '%d.pcd' % scan_id))
         else:
             partial = read_pcd(os.path.join("./data/val/", model_id + '_%d_denoised.pcd' % scan_id))
         complete = read_pcd(os.path.join("./data/complete/", '%s.pcd' % model_id))       

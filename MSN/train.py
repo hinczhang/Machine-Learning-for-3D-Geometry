@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 import sys
 from dataset import *
-from model import *
+
 from utils import *
 import os
 import json
@@ -17,9 +17,10 @@ sys.path.append("./emd/")
 import emd_module as emd
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--batchSize', type=int, default=8, help='input batch size')
+parser.add_argument('--network', type=str, default = 'softpool',  help='optional load the model type')
+parser.add_argument('--batchSize', type=int, default=16, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=12)
-parser.add_argument('--nepoch', type=int, default=2, help='number of epochs to train for')
+parser.add_argument('--nepoch', type=int, default=50, help='number of epochs to train for')
 parser.add_argument('--model', type=str, default = '',  help='optional reload model path')
 parser.add_argument('--num_points', type=int, default = 1024,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of surface elements')
@@ -27,6 +28,11 @@ parser.add_argument('--env', type=str, default ="MSN_TRAIN"   ,  help='visdom en
 
 opt = parser.parse_args()
 print (opt)
+
+if opt.network == 'softpool':
+    from model import *
+else:
+    from model_baseline import *
 
 class FullModel(nn.Module):
     def __init__(self, model):
@@ -65,11 +71,11 @@ torch.manual_seed(opt.manualSeed)
 best_val_loss = 10
 
 dataset = ShapeNet(train=True, npoints=opt.num_points)
-dataset = torch.utils.data.Subset(dataset, range(50))
+dataset = torch.utils.data.Subset(dataset, range(304))
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                           shuffle=True, num_workers=int(opt.workers))
 dataset_test = ShapeNet(train=False, npoints=opt.num_points)
-dataset_test = torch.utils.data.Subset(dataset_test, range(10))
+dataset_test = torch.utils.data.Subset(dataset_test, range(96))
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
                                           shuffle=False, num_workers=int(opt.workers))
 
