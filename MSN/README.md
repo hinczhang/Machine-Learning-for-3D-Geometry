@@ -47,3 +47,4 @@ Do a spatial transformation on `x` and then do it again.
 Use `train.py` to train and use `val.py` to validate. Actually two of them use the same dataset (*val*)  
 Please notice: to reduce the batch size, it is suggested that you could set `--num_points` as the multiples of 1024, like:  
 `train.py --num_points 2048`  
+or `nohup python train.py --network MSN > train.log  2>&1 &`
