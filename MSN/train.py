@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--network', type=str, default = 'softpool',  help='optional load the model type')
 parser.add_argument('--batchSize', type=int, default=16, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=12)
-parser.add_argument('--nepoch', type=int, default=50, help='number of epochs to train for')
+parser.add_argument('--nepoch', type=int, default=20, help='number of epochs to train for')
 parser.add_argument('--model', type=str, default = '',  help='optional reload model path')
 parser.add_argument('--num_points', type=int, default = 1024,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of surface elements')
@@ -154,6 +154,12 @@ for epoch in range(opt.nepoch):
 
     val_curve.append(val_loss.avg)
 
+    
+    
+    if best_val_loss > val_loss.avg:
+        best_val_loss = val_loss.avg
+        torch.save(network.module.model.state_dict(), '%s/network.pth' % (dir_name))
+    print('saving net...')
     log_table = {
       "train_loss" : train_loss.avg,
       "val_loss" : val_loss.avg,
@@ -165,5 +171,5 @@ for epoch in range(opt.nepoch):
     with open(logname, 'a') as f: 
         f.write('json_stats: ' + json.dumps(log_table) + '\n')
 
-    print('saving net...')
-    torch.save(network.module.model.state_dict(), '%s/network.pth' % (dir_name))
+    
+    
