@@ -11,7 +11,6 @@ from utils import *
 import os
 import json
 import time, datetime
-import visdom
 from time import time
 sys.path.append("./emd/")
 import emd_module as emd
