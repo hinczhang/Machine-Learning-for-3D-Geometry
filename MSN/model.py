@@ -7,92 +7,12 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 import sys
-from SoftPool import soft_pool2d, SoftPool2d
-from LocallyConnected2d import LocallyConnected2d
+
 sys.path.append("./expansion_penalty/")
 import expansion_penalty_module as expansion
 sys.path.append("./MDS/")
 import MDS_module
-
-class STN3d(nn.Module):
-    def __init__(self, num_points = 2500):
-        super(STN3d, self).__init__()
-        self.num_points = num_points
-        self.conv1 = torch.nn.Conv1d(3, 64, 1)
-        self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 9)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        batchsize = x.size()[0]
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x,_ = torch.max(x, 2)
-        x = x.view(-1, 1024)
-
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-
-        iden = Variable(torch.from_numpy(np.array([1,0,0,0,1,0,0,0,1]).astype(np.float32))).view(1,9).repeat(batchsize,1)
-        if x.is_cuda:
-            iden = iden.cuda()
-        x = x + iden
-        x = x.view(-1, 3, 3)
-        return x
-
-class PointNetfeat(nn.Module):
-    def __init__(self, num_points = 8192, global_feat = True):
-        super(PointNetfeat, self).__init__()
-        self.stn = STN3d(num_points = num_points)
-        self.conv1 = torch.nn.Conv1d(3, 64, 1)
-        self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-
-        self.bn1 = torch.nn.BatchNorm1d(64)
-        self.bn2 = torch.nn.BatchNorm1d(128)
-        self.bn3 = torch.nn.BatchNorm1d(1024)
-        self.pool = SoftPool2d(kernel_size=(1,1), stride=(2,2))
-        self.bn4 = torch.nn.BatchNorm1d(1024)
-        self.conv4 = torch.nn.Conv2d(1, 16, 1)
-        
-        self.localConv = LocallyConnected2d(512,1024,5000,True)
-        self.num_points = num_points
-        self.global_feat = global_feat
-    def forward(self, x):
-        batchsize = x.size()[0]
-        trans = self.stn(x)
-        x = x.transpose(2,1)
-        x = torch.bmm(x, trans)
-        x = x.transpose(2,1)
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = self.bn3(self.conv3(x))
-        x = self.pool(x)
-        
-        x, _ = torch.sort(x, descending=True, dim = 1)
-        trucated_size = int(x.shape[1]//x.shape[0])
-        t_x = x[0,:trucated_size,:]
-        for pts in x[1:]:
-            t_x = torch.cat((t_x, pts[:trucated_size]))
-        x = t_x
-        x = self.localConv(x)
-        x = x.transpose(2,0)
-        x = torch.nn.functional.interpolate(x,size=batchsize)
-        x = x.transpose(2,0)
-        x = self.bn4(x)
-        print(x.shape)
-        #x = self.bn4(self.conv4(x))
-        
-        
-        x,_ = torch.max(x, 2)
-        
-        x = x.view(-1, 1024)
-        return x
+from PseudoSPNet import PseudoSPNet
 
 class PointGenCon(nn.Module):
     def __init__(self, bottleneck_size = 8192):
@@ -161,7 +81,7 @@ class MSN(nn.Module):
         self.bottleneck_size = bottleneck_size
         self.n_primitives = n_primitives
         self.encoder = nn.Sequential(
-        PointNetfeat(num_points, global_feat=True),
+        PseudoSPNet(num_points, n_primitives),
         nn.Linear(1024, self.bottleneck_size),
         nn.BatchNorm1d(self.bottleneck_size),
         nn.ReLU()
@@ -193,9 +113,10 @@ class MSN(nn.Module):
         partial = torch.cat( (partial, id1), 1)
         #print(outs.shape)
         xx = torch.cat( (outs, partial), 2)
-
+        # print('orgin: ', xx[:, 0:3, :].transpose(1, 2).contiguous().shape, out1.shape[1], mean_mst_dis.shape)
         resampled_idx = MDS_module.minimum_density_sample(xx[:, 0:3, :].transpose(1, 2).contiguous(), out1.shape[1], mean_mst_dis) 
         xx = MDS_module.gather_operation(xx, resampled_idx)
+        # print('after: ', xx.shape)
         delta = self.res(xx)
         xx = xx[:, 0:3, :] 
         out2 = (xx + delta).transpose(2,1).contiguous()  

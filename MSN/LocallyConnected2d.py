@@ -1,11 +1,3 @@
-"""
-Test implementation of locally connected 2d layer
-The first part of the script was used for debugging
-
-@author: ptrblck
-"""
-
-
 import torch
 import torch.nn as nn
 from torch.nn.modules.utils import _pair
