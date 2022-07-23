@@ -37,11 +37,12 @@ This revision mainly works for testing importing SoftPool.
 Investigate the possible use of STN.  
 **01.07.2022**  
 In `model.py`, we apply `STN3D` in `PointNetfeat`:  
-
+```
     trans = self.stn(x)
     x = x.transpose(2,1)
     x = torch.bmm(x, trans)
     x = x.transpose(2,1)
+```
 Do a spatial transformation on `x` and then do it again.
 ### RUN IT!
 Use `train.py` to train and use `val.py` to validate. Actually two of them use the same dataset (*val*)  
