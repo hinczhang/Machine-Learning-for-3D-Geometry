@@ -75,13 +75,13 @@ class PointNetRes(nn.Module):
         return x
 
 class MSN(nn.Module):
-    def __init__(self, num_points = 8192, bottleneck_size = 1024, n_primitives = 16):
+    def __init__(self, batch_size,num_points = 8192, bottleneck_size = 1024, n_primitives = 16):
         super(MSN, self).__init__()
         self.num_points = num_points
         self.bottleneck_size = bottleneck_size
         self.n_primitives = n_primitives
         self.encoder = nn.Sequential(
-        PseudoSPNet(num_points, n_primitives),
+        PseudoSPNet(batch_size, num_points, n_primitives),
         nn.Linear(1024, self.bottleneck_size),
         nn.BatchNorm1d(self.bottleneck_size),
         nn.ReLU()
@@ -111,12 +111,11 @@ class MSN(nn.Module):
         outs = torch.cat( (outs, id0), 1)
         id1 = torch.ones(partial.shape[0], 1, partial.shape[2]).cuda().contiguous()
         partial = torch.cat( (partial, id1), 1)
-        #print(outs.shape)
+
         xx = torch.cat( (outs, partial), 2)
-        # print('orgin: ', xx[:, 0:3, :].transpose(1, 2).contiguous().shape, out1.shape[1], mean_mst_dis.shape)
         resampled_idx = MDS_module.minimum_density_sample(xx[:, 0:3, :].transpose(1, 2).contiguous(), out1.shape[1], mean_mst_dis) 
         xx = MDS_module.gather_operation(xx, resampled_idx)
-        # print('after: ', xx.shape)
+
         delta = self.res(xx)
         xx = xx[:, 0:3, :] 
         out2 = (xx + delta).transpose(2,1).contiguous()  
