@@ -46,9 +46,9 @@ class STN3d(nn.Module):
 
 
 class PseudoSPNet(nn.Module):
-    def __init__(self, num_points = 8192, n_primitives = 16):
+    def __init__(self, batch_size = 64, num_points = 8192, n_primitives = 16):
         super(PseudoSPNet, self).__init__()
-
+        self.batch_size = batch_size
         self.num_points = num_points
         self.n_primitives = n_primitives
 
@@ -58,15 +58,18 @@ class PseudoSPNet(nn.Module):
         self.bn1 = torch.nn.BatchNorm1d(64)
         self.bn2 = torch.nn.BatchNorm1d(128)
         self.bn3 = torch.nn.BatchNorm1d(64)
+        
         self.bn4 = torch.nn.BatchNorm1d(128)
         self.bn5 = torch.nn.BatchNorm1d(512)
         self.bn6 = torch.nn.BatchNorm1d(1024)
         self.pool = SoftPool2d(kernel_size=(1,1), stride=(4,4))
         self.localConv = LocallyConnected2d(32,64,5000,True)
 
-        self.deconv1 = torch.nn.ConvTranspose1d(64, 128, 1)
-        self.deconv2 = torch.nn.ConvTranspose1d(3+128, 512, 1)
-        self.deconv3 = torch.nn.ConvTranspose1d(512, 1024, 1)
+        self.deconv1 = torch.nn.ConvTranspose2d(1, self.batch_size, 1)
+        self.deconv2 = torch.nn.ConvTranspose1d(64, 128, 1)
+        self.deconv3 = torch.nn.ConvTranspose1d(3+128, 512, 1)
+
+        self.deconv4 = torch.nn.ConvTranspose1d(512, 1024, 1)
         self.expansion = expansion.expansionPenaltyModule()
     
     def forward(self, x):
@@ -87,20 +90,24 @@ class PseudoSPNet(nn.Module):
             t_x = torch.cat((t_x, pts[:trucated_size]))
         x = t_x
         x = self.localConv(x)
+        '''
+        print('after conv: ', x.shape)
         x = x.transpose(2,0)
         x = torch.nn.functional.interpolate(x,size=batchsize)
         x = x.transpose(2,0)
-        #print('after pool: ', x.shape)
-        
+        print('after pool: ', x.shape)
+        '''
+        x = self.deconv1(x.unsqueeze(0))[0]
         x = self.bn3(x)
-        x = self.bn4(self.deconv1(x))
+        x = self.bn4(self.deconv2(x))
         x = torch.cat((x, R.transpose(2,1)), 1)
-        x = self.bn5(self.deconv2(x))
+        x = self.bn5(self.deconv3(x))
         
         _, _, mean_mst_dis = self.expansion(x, self.num_points//self.n_primitives, 1.5)
-        resampled_idx = MDS_module.minimum_density_sample(x.transpose(1,2).contiguous(), x.transpose(1, 2).contiguous().shape[1], mean_mst_dis) 
+        resampled_idx = MDS_module.minimum_density_sample(x.transpose(1,2).contiguous(), x.transpose(1, 2).contiguous().shape[1], mean_mst_dis)
+        
         x = MDS_module.gather_operation(x, resampled_idx) # (16,512,5000)
-        x= self.bn6(self.deconv3(x))
+        x= self.bn6(self.deconv4(x))
         x,_ = torch.max(x, 2)
         
         x = x.view(-1, 1024)

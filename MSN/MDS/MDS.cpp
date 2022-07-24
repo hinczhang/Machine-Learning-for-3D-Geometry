@@ -42,7 +42,7 @@ void minimum_density_sampling_kernel_wrapper(int b, int n, int m,
 
 #define CHECK_IS_FLOAT(x)                              \
   do {                                                 \
-    TORCH_CHECK(x.scalar_type() == at::ScalarType::Float, \
+    TORCH_CHECK(x.scalar_type() == at::ScalarType::Float\
              #x " must be a float tensor");            \
   } while (0)
 
