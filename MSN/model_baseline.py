@@ -68,6 +68,7 @@ class PointNetfeat(nn.Module):
         x = self.bn3(self.conv3(x))
         x,_ = torch.max(x, 2)
         x = x.view(-1, 1024)
+        print(x.shape)
         return x
 
 class PointGenCon(nn.Module):

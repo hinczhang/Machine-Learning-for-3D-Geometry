@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--network', type=str, default = 'softpool',  help='optional load the model type')
 parser.add_argument('--batchSize', type=int, default= 64, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=7)
-parser.add_argument('--nepoch', type=int, default=20, help='number of epochs to train for')
+parser.add_argument('--nepoch', type=int, default=5, help='number of epochs to train for')
 parser.add_argument('--model', type=str, default = '',  help='optional reload model path')
 parser.add_argument('--num_points', type=int, default = 4096,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of surface elements')
@@ -71,13 +71,13 @@ torch.manual_seed(opt.manualSeed)
 best_val_loss = 10
 
 dataset = ShapeNet(train=True, npoints=opt.num_points)
-#dataset = torch.utils.data.Subset(dataset, range(430))
+#dataset = torch.utils.data.Subset(dataset, range(35))
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-                                          shuffle=True, num_workers=int(opt.workers), droplast = True)
+                                          shuffle=True, num_workers=int(opt.workers), drop_last = True)
 dataset_test = ShapeNet(train=False, npoints=opt.num_points)
 dataset_test = torch.utils.data.Subset(dataset_test, range(100*50))
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
-                                          shuffle=False, num_workers=int(opt.workers), droplast = True)
+                                          shuffle=False, num_workers=int(opt.workers), drop_last = True)
 
 len_dataset = len(dataset)
 print("Train Set Size: ", len_dataset)
@@ -167,8 +167,3 @@ for epoch in range(opt.nepoch):
                 f.write('json_stats: ' + json.dumps(log_table) + '\n')
 
     train_curve.append(train_loss.avg)
-
-    
-
-    
-    

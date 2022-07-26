@@ -13,6 +13,7 @@ import expansion_penalty_module as expansion
 sys.path.append("./MDS/")
 import MDS_module
 from PseudoSPNet import PseudoSPNet
+from PseudoSPNet import STN3d
 
 class PointGenCon(nn.Module):
     def __init__(self, bottleneck_size = 8192):
@@ -80,6 +81,9 @@ class MSN(nn.Module):
         self.num_points = num_points
         self.bottleneck_size = bottleneck_size
         self.n_primitives = n_primitives
+        self.batch_size = batch_size
+        self.stn = STN3d(num_points = num_points)
+        #self.fc = nn.Linear(1500, 1024)
         self.encoder = nn.Sequential(
         PseudoSPNet(batch_size, num_points, n_primitives),
         nn.Linear(1024, self.bottleneck_size),
@@ -89,10 +93,29 @@ class MSN(nn.Module):
         self.decoder = nn.ModuleList([PointGenCon(bottleneck_size = 2 +self.bottleneck_size) for i in range(0,self.n_primitives)])
         self.res = PointNetRes()
         self.expansion = expansion.expansionPenaltyModule()
+        self.conv = nn.Conv1d(1500, 1024, 1)
+        self.bn = nn.BatchNorm1d(1024)
+
+        self.conv_ = nn.Conv1d(2048, 1024, 1)
+        self.bn_ = nn.BatchNorm1d(1024)
 
     def forward(self, x):
         partial = x
+
+        trans = self.stn(x)
+        R = x.transpose(2,1)
+        R = torch.bmm(R, trans)
+        R = x.transpose(2,1)
+        indices = torch.randperm(R.shape[1])[:500]
+        R = R[:,indices,:]
+        R = R.reshape(self.batch_size, -1)
+        R = R.unsqueeze(0).transpose(2,1)
+        
+        R = F.relu(self.bn(self.conv(R)))[0]
+        R = R.transpose(0,1)
         x = self.encoder(x)
+        x = torch.cat((R,x), 1)
+        x = F.relu(self.bn_(self.conv_(x.transpose(0,1).unsqueeze(0)))[0].transpose(0,1))
         outs = []
         for i in range(0,self.n_primitives):
             rand_grid = Variable(torch.cuda.FloatTensor(x.size(0),2,self.num_points//self.n_primitives))
