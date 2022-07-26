@@ -31,6 +31,8 @@ print (opt)
 
 if opt.network == 'softpool':
     from model import *
+elif opt.network == 'test':
+    from model_baseline_testPool import *
 else:
     from model_baseline import *
 
@@ -75,11 +77,12 @@ dataset = ShapeNet(train=True, npoints=opt.num_points)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                           shuffle=True, num_workers=int(opt.workers), drop_last = True)
 dataset_test = ShapeNet(train=False, npoints=opt.num_points)
-dataset_test = torch.utils.data.Subset(dataset_test, range(100*50))
+dataset_test = torch.utils.data.Subset(dataset_test, range(40*64))
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
                                           shuffle=False, num_workers=int(opt.workers), drop_last = True)
 
 len_dataset = len(dataset)
+len_valset = len(dataset_test)
 print("Train Set Size: ", len_dataset)
 
 network = MSN(batch_size = opt.batchSize, num_points = opt.num_points, n_primitives = opt.n_primitives)
@@ -120,6 +123,7 @@ for epoch in range(opt.nepoch):
         optimizer = optim.Adam(network.module.model.parameters(), lr = lrate/100.0)
 
     for i, data in enumerate(dataloader, 0):
+        
         optimizer.zero_grad()
         id, input, gt = data
         input = input.float().cuda()
@@ -136,25 +140,26 @@ for epoch in range(opt.nepoch):
             idx = random.randint(0, input.size()[0] - 1)
 
         print(opt.env + ' train [%d: %d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(epoch, i, len_dataset/opt.batchSize, emd1.mean().item(), emd2.mean().item(), expansion_penalty.mean().item()))
+
         # VALIDATION
         if i % int((len_dataset//opt.batchSize)/3) == 0 and i!=0:
             val_loss.reset()
             network.module.model.eval()
             with torch.no_grad():
-                for i, data in enumerate(dataloader_test, 0):
-                    id, input, gt = data
+                for i_val, data_val in enumerate(dataloader_test, 0):
+                    id, input, gt = data_val
                     input = input.float().cuda()
                     gt = gt.float().cuda()
                     input = input.transpose(2,1).contiguous()
                     output1, output2, emd1, emd2, expansion_penalty  = network(input, gt.contiguous(), 0.004, 3000)
                     val_loss.update(emd2.mean().item())
                     idx = random.randint(0, input.size()[0] - 1)
-                    print(opt.env + ' val [%d: %d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(epoch, i, len_dataset/opt.batchSize, emd1.mean().item(), emd2.mean().item(), expansion_penalty.mean().item()))
+                    print(opt.env + ' val [%d: %d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(epoch, i_val, len_valset/opt.batchSize, emd1.mean().item(), emd2.mean().item(), expansion_penalty.mean().item()))
             val_curve.append(val_loss.avg)
             if best_val_loss > val_loss.avg:
                 best_val_loss = val_loss.avg
                 torch.save(network.module.model.state_dict(), '%s/network.pth' % (dir_name))
-            print('saving net...')
+                print('saving net...')
             log_table = {
             "train_loss" : train_loss.avg,
             "val_loss" : val_loss.avg,
@@ -165,5 +170,8 @@ for epoch in range(opt.nepoch):
             }
             with open(logname, 'a') as f: 
                 f.write('json_stats: ' + json.dumps(log_table) + '\n')
+            network.module.model.train()
 
     train_curve.append(train_loss.avg)
+print("train curve: ", train_curve)
+print("val curve: ", val_curve)
