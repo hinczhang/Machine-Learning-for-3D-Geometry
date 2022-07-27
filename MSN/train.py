@@ -50,7 +50,9 @@ class FullModel(nn.Module):
         emd1 = torch.sqrt(dist).mean(1)
         
         dist, _ = self.EMD(output2, gt, eps, iters)
-        emd2 = torch.sqrt(dist).mean(1)    
+        emd2 = torch.sqrt(dist).mean(1)
+        
+        
 
         return output1, output2, emd1, emd2, expansion_penalty
 
@@ -77,7 +79,7 @@ dataset = ShapeNet(train=True, npoints=opt.num_points)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                           shuffle=True, num_workers=int(opt.workers), drop_last = True)
 dataset_test = ShapeNet(train=False, npoints=opt.num_points)
-dataset_test = torch.utils.data.Subset(dataset_test, range(40*64))
+dataset_test = torch.utils.data.Subset(dataset_test, range(50*64))
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
                                           shuffle=False, num_workers=int(opt.workers), drop_last = True)
 
@@ -130,7 +132,7 @@ for epoch in range(opt.nepoch):
         gt = gt.float().cuda()
         input = input.transpose(2,1).contiguous()
         output1, output2, emd1, emd2, expansion_penalty  = network(input, gt.contiguous(), 0.005, 50)         
-        loss_net = emd1.mean() + emd2.mean() + expansion_penalty.mean() * 0.1
+        loss_net = emd1.mean() + emd2.mean() + expansion_penalty.mean() * 0.1 
         
         loss_net.backward()
         train_loss.update(emd2.mean().item())

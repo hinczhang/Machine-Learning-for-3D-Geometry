@@ -21,8 +21,8 @@ class STN3d(nn.Module):
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
         self.conv3 = torch.nn.Conv1d(128, 1024, 1)
         self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 9)
+        self.fc2 = nn.Linear(512, 128)
+        self.fc3 = nn.Linear(128, 9)
         self.relu = nn.ReLU()
 
     def forward(self, x):
@@ -80,9 +80,8 @@ class PseudoSPNet(nn.Module):
     def forward(self, x):
         batchsize = x.size()[0]
         trans = self.stn(x)
-        R = x.transpose(2,1)
-        R = torch.bmm(R, trans)
-        R = x.transpose(2,1)
+        x = torch.bmm(x.transpose(2,1), trans)
+        x = x.transpose(2,1)
 
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
@@ -106,7 +105,7 @@ class PseudoSPNet(nn.Module):
         '''
         
         x = self.deconv1(x.unsqueeze(0))[0]
-        x = F.relu(self.bn4(x))
+        #x = self.bn4(x)
         '''
         print("after conv:", x.shape)
         x = self.bn4(self.deconv2(F.relu(x)))
