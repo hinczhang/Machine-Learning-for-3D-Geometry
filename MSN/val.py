@@ -12,13 +12,13 @@ import emd_module as emd
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default = './trained_model/network.pth',  help='optional reload model path')
-parser.add_argument('--num_points', type=int, default = 1024,  help='number of points')
+parser.add_argument('--num_points', type=int, default = 4096,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of primitives in the atlas')
 
 opt = parser.parse_args()
 print (opt)
 
-network = MSN(num_points = opt.num_points, n_primitives = opt.n_primitives) 
+network = MSN(64, num_points = opt.num_points, n_primitives = opt.n_primitives) 
 network.cuda()
 network.apply(weights_init)
 
@@ -52,15 +52,27 @@ with torch.no_grad():
         print(model)
         #partial = torch.zeros((50, 5000, 3), device='cuda')
         #gt = torch.zeros((50, opt.num_points, 3), device='cuda')
-        partial = torch.zeros((50, 5000, 3), device='cuda')
+        partial = torch.zeros((50, 6400, 3), device='cuda')
         gt = torch.zeros((50, opt.num_points, 3), device='cuda')
         for j in range(50):
             pcd = o3d.io.read_point_cloud(os.path.join(partial_dir, model + '_' + str(j) + '_denoised.pcd'))
-            partial[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), 5000))
+            partial[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), 6400))
             pcd = o3d.io.read_point_cloud(os.path.join(gt_dir, model + '.pcd'))
             gt[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), opt.num_points))
-
+        
         output1, output2, expansion_penalty = network(partial.transpose(2,1).contiguous())
+        
+        pcd1 = o3d.geometry.PointCloud()
+        pcd1.points = o3d.utility.Vector3dVector(output1.cpu().numpy().reshape(-1,3))
+        pcd2 = o3d.geometry.PointCloud()
+        pcd2.points = o3d.utility.Vector3dVector(output2.cpu().numpy().reshape(-1,3))
+        pcd3 = o3d.geometry.PointCloud()
+        pcd3.points = o3d.utility.Vector3dVector(gt.cpu().numpy().reshape(-1,3))
+        o3d.io.write_point_cloud(os.path.join('/home/hinczhang/Projects/Machine-Learning-for-3D-Geometry/MSN','output1.pcd'), pcd1)
+        o3d.io.write_point_cloud(os.path.join('/home/hinczhang/Projects/Machine-Learning-for-3D-Geometry/MSN','output2.pcd'), pcd2)
+        o3d.io.write_point_cloud(os.path.join('/home/hinczhang/Projects/Machine-Learning-for-3D-Geometry/MSN','gt.pcd'), pcd3)
+        
+        print(output1.shape, output2.shape, gt.shape)
         dist, _ = EMD(output1, gt, 0.002, 10000)
         emd1 = torch.sqrt(dist).mean()
         dist, _ = EMD(output2, gt, 0.002, 10000)
