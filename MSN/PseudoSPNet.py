@@ -20,21 +20,26 @@ class STN3d(nn.Module):
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
         self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 128)
+        self.fc1 = nn.Linear(1024, 256)
+        self.fc2 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, 9)
-        self.relu = nn.ReLU()
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        
+        self.dropout1 = nn.Dropout(0.5)
+        self.dropout2 = nn.Dropout(0.5)
 
     def forward(self, x):
         batchsize = x.size()[0]
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
+        x = self.leakyrelu(self.conv1(x))
+        x = self.leakyrelu(self.conv2(x))
+        x = self.leakyrelu(self.conv3(x))
         x,_ = torch.max(x, 2)
         x = x.view(-1, 1024)
 
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.leakyrelu(self.fc1(x))
+        x = self.dropout1(x)
+        x = self.leakyrelu(self.fc2(x))
+        x = self.dropout2(x)
         x = self.fc3(x)
 
         iden = Variable(torch.from_numpy(np.array([1,0,0,0,1,0,0,0,1]).astype(np.float32))).view(1,9).repeat(batchsize,1)
@@ -59,7 +64,8 @@ class PseudoSPNet(nn.Module):
         self.bn1 = torch.nn.BatchNorm1d(64)
         self.bn2 = torch.nn.BatchNorm1d(128)
         self.bn3 = torch.nn.BatchNorm1d(1024)
-        self.bn4 = torch.nn.BatchNorm1d(1024)
+        #self.bn4 = torch.nn.BatchNorm1d(1024)
+        #self.bn5 = torch.nn.BatchNorm1d(1024)
         '''
         self.bn4 = torch.nn.BatchNorm1d(128)
         self.bn5 = torch.nn.BatchNorm1d(512)
@@ -69,6 +75,7 @@ class PseudoSPNet(nn.Module):
         self.localConv = LocallyConnected2d(batch_size,512,1024,5000,False)
         
         self.deconv1 = torch.nn.ConvTranspose2d(1, self.batch_size, 1)
+        self.leakyrelu = nn.LeakyReLU(0.2)
         '''
         self.deconv2 = torch.nn.ConvTranspose1d(64, 128, 1)
         self.deconv3 = torch.nn.ConvTranspose1d(3+128, 512, 1)
@@ -83,9 +90,9 @@ class PseudoSPNet(nn.Module):
         x = torch.bmm(x.transpose(2,1), trans)
         x = x.transpose(2,1)
 
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.leakyrelu(self.bn1(self.conv1(x)))
+        x = self.leakyrelu(self.bn2(self.conv2(x)))
+        x = self.leakyrelu(self.bn3(self.conv3(x)))
         x = self.pool(x)
 
         x, _ = torch.sort(x, descending=True, dim = 1)
@@ -105,7 +112,7 @@ class PseudoSPNet(nn.Module):
         '''
         
         x = self.deconv1(x.unsqueeze(0))[0]
-        #x = self.bn4(x)
+        #x = self.bn5(x)
         '''
         print("after conv:", x.shape)
         x = self.bn4(self.deconv2(F.relu(x)))

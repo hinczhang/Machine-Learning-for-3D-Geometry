@@ -76,7 +76,7 @@ class PointNetRes(nn.Module):
         return x
 
 class MSN(nn.Module):
-    def __init__(self, batch_size,num_points = 8192, bottleneck_size = 1024, n_primitives = 16):
+    def __init__(self, batch_size, num_points = 8192, bottleneck_size = 1024, n_primitives = 16):
         super(MSN, self).__init__()
         self.num_points = num_points
         self.bottleneck_size = bottleneck_size
@@ -84,20 +84,29 @@ class MSN(nn.Module):
         self.batch_size = batch_size
         self.stn = STN3d(num_points = num_points)
         #self.fc = nn.Linear(1500, 1024)
+        
         self.encoder = nn.Sequential(
         PseudoSPNet(batch_size, num_points, n_primitives),
+        nn.BatchNorm1d(1024),
         nn.Linear(1024, self.bottleneck_size),
         nn.BatchNorm1d(self.bottleneck_size),
-        nn.ReLU()
+        nn.LeakyReLU(negative_slope=0.2),
+        nn.Dropout(0.1)
         )
         self.decoder = nn.ModuleList([PointGenCon(bottleneck_size = 2 +self.bottleneck_size) for i in range(0,self.n_primitives)])
         self.res = PointNetRes()
         self.expansion = expansion.expansionPenaltyModule()
-        self.conv = nn.Conv1d(1500, 1024, 1)
+        
+
+        self.conv = nn.Conv1d(1920, 1024, 1)
         self.bn = nn.BatchNorm1d(1024)
 
         self.conv_ = nn.Conv1d(2048, 1024, 1)
         self.bn_ = nn.BatchNorm1d(1024)
+        self.leakyrelu = nn.LeakyReLU(negative_slope=0.2)
+
+        #self.bn_after = torch.nn.BatchNorm1d(1024)
+        
 
     def forward(self, x):
         partial = x
@@ -105,17 +114,20 @@ class MSN(nn.Module):
         trans = self.stn(x)
         R = torch.bmm(x.transpose(2,1), trans)
 
-        indices = torch.randperm(R.shape[1])[:500]
+        indices = torch.randperm(R.shape[1])[:640]
         R = R[:,indices,:]
         R = R.transpose(2,1)
         
         R = R.reshape(self.batch_size, -1)
         R = R.unsqueeze(0).transpose(2,1)
-        R = F.relu(self.bn(self.conv(R)))[0]
+        R = self.leakyrelu(self.bn(self.conv(R)))[0]
         R = R.transpose(0,1)
+        
         x = self.encoder(x)
+        
         x = torch.cat((R,x), 1)
-        x = F.relu(self.bn_(self.conv_(x.transpose(0,1).unsqueeze(0)))[0].transpose(0,1))
+        x = self.leakyrelu(self.bn_(self.conv_(x.transpose(0,1).unsqueeze(0)))[0].transpose(0,1))
+        
         outs = []
         for i in range(0,self.n_primitives):
             rand_grid = Variable(torch.cuda.FloatTensor(x.size(0),2,self.num_points//self.n_primitives))
