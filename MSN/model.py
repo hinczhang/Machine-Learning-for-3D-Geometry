@@ -76,8 +76,9 @@ class PointNetRes(nn.Module):
         return x
 
 class MSN(nn.Module):
-    def __init__(self, batch_size, num_points = 8192, bottleneck_size = 1024, n_primitives = 16):
+    def __init__(self, batch_size, num_points = 8192, bottleneck_size = 1024, n_primitives = 16, if_train = True):
         super(MSN, self).__init__()
+        self.if_train = if_train
         self.num_points = num_points
         self.bottleneck_size = bottleneck_size
         self.n_primitives = n_primitives
@@ -98,7 +99,7 @@ class MSN(nn.Module):
         self.expansion = expansion.expansionPenaltyModule()
         
 
-        self.conv = nn.Conv1d(1920, 1024, 1)
+        self.conv = nn.Conv1d(1152, 1024, 1)
         self.bn = nn.BatchNorm1d(1024)
 
         self.conv_ = nn.Conv1d(2048, 1024, 1)
@@ -113,20 +114,26 @@ class MSN(nn.Module):
 
         trans = self.stn(x)
         R = torch.bmm(x.transpose(2,1), trans)
-
-        indices = torch.randperm(R.shape[1])[:640]
+        if self.if_train:
+            indices = torch.randperm(R.shape[1])[:384]
+        else:
+            indices = torch.randperm(R.shape[1])[:640]
         R = R[:,indices,:]
         R = R.transpose(2,1)
         
         R = R.reshape(self.batch_size, -1)
-        R = R.unsqueeze(0).transpose(2,1)
-        R = self.leakyrelu(self.bn(self.conv(R)))[0]
-        R = R.transpose(0,1)
+        if not self.if_train:
+            indices = torch.randperm(R.shape[1])[:1152]
+            R = R[:, indices]
+        #R = R.unsqueeze(0).transpose(2,1)
+        
+        R = self.leakyrelu(self.bn(self.conv(R.unsqueeze(2)))).squeeze(2)
+        #R = R.transpose(0,1)
         
         x = self.encoder(x)
         
         x = torch.cat((R,x), 1)
-        x = self.leakyrelu(self.bn_(self.conv_(x.transpose(0,1).unsqueeze(0)))[0].transpose(0,1))
+        x = self.leakyrelu(self.bn_(self.conv_(x.unsqueeze(2)))).squeeze(2)
         
         outs = []
         for i in range(0,self.n_primitives):
@@ -146,6 +153,8 @@ class MSN(nn.Module):
         outs = torch.cat( (outs, id0), 1)
         id1 = torch.ones(partial.shape[0], 1, partial.shape[2]).cuda().contiguous()
         partial = torch.cat( (partial, id1), 1)
+        if not self.if_train:
+            partial = nn.functional.interpolate(partial.transpose(0,2), size = 64).transpose(0,2)
 
         xx = torch.cat( (outs, partial), 2)
         resampled_idx = MDS_module.minimum_density_sample(xx[:, 0:3, :].transpose(1, 2).contiguous(), out1.shape[1], mean_mst_dis) 
