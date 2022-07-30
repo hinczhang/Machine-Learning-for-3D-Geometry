@@ -1,6 +1,6 @@
 import sys
 import open3d as o3d
-from model_baseline import *
+from model import *
 from utils import *
 import argparse
 import random
@@ -11,14 +11,14 @@ sys.path.append("./emd/")
 import emd_module as emd
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str, default = './trained_model/network_baseline.pth',  help='optional reload model path')
+parser.add_argument('--model', type=str, default = './trained_model/network.pth',  help='optional reload model path')
 parser.add_argument('--num_points', type=int, default = 4096,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of primitives in the atlas')
 
 opt = parser.parse_args()
 print (opt)
 
-network = MSN(64, num_points = opt.num_points, n_primitives = opt.n_primitives) 
+network = MSN(64, num_points = opt.num_points, n_primitives = opt.n_primitives, if_train = False) 
 network.cuda()
 network.apply(weights_init)
 
@@ -80,10 +80,14 @@ with torch.no_grad():
         o3d.io.write_point_cloud(os.path.join('/home/hinczhang/Projects/Machine-Learning-for-3D-Geometry/MSN','output2.pcd'), pcd2)
         o3d.io.write_point_cloud(os.path.join('/home/hinczhang/Projects/Machine-Learning-for-3D-Geometry/MSN','gt.pcd'), pcd3)
         
-        print(output1.shape, output2.shape, gt.shape)
+        output_int = torch.from_numpy(new_out)
+        output_int = nn.functional.interpolate(output_int.unsqueeze(0).transpose(2,1), size = 64*4096).transpose(2,1)[0].reshape(64,4096,3)
+
+        gt = nn.functional.interpolate(gt.transpose(0,2), size = 64).transpose(0,2)
+        print(output1.shape, output_int.shape, gt.shape)
         dist, _ = EMD(output1, gt, 0.002, 10000)
         emd1 = torch.sqrt(dist).mean()
-        dist, _ = EMD(output2, gt, 0.002, 10000)
+        dist, _ = EMD(output_int, gt, 0.002, 10000)
         emd2 = torch.sqrt(dist).mean()
         idx = random.randint(0, 49)
 
