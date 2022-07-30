@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--network', type=str, default = 'softpool',  help='optional load the model type')
 parser.add_argument('--batchSize', type=int, default= 64, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=7)
-parser.add_argument('--nepoch', type=int, default=5, help='number of epochs to train for')
+parser.add_argument('--nepoch', type=int, default= 2 ,help='number of epochs to train for')
 parser.add_argument('--model', type=str, default = '',  help='optional reload model path')
 parser.add_argument('--num_points', type=int, default = 4096,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of surface elements')
@@ -79,7 +79,7 @@ dataset = ShapeNet(train=True, npoints=opt.num_points)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                           shuffle=True, num_workers=int(opt.workers), drop_last = True)
 dataset_test = ShapeNet(train=False, npoints=opt.num_points)
-dataset_test = torch.utils.data.Subset(dataset_test, range(50*64))
+dataset_test = torch.utils.data.Subset(dataset_test, range(700*64))
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
                                           shuffle=False, num_workers=int(opt.workers), drop_last = True)
 
@@ -132,16 +132,15 @@ for epoch in range(opt.nepoch):
         gt = gt.float().cuda()
         input = input.transpose(2,1).contiguous()
         output1, output2, emd1, emd2, expansion_penalty  = network(input, gt.contiguous(), 0.005, 50)         
-        loss_net = emd1.mean() + emd2.mean() + expansion_penalty.mean() * 0.1 
-        
+        loss_net = emd1.mean() + emd2.mean() + expansion_penalty.mean() * 0.1
         loss_net.backward()
         train_loss.update(emd2.mean().item())
         optimizer.step() 
 
         if i % 10 == 0:
             idx = random.randint(0, input.size()[0] - 1)
-
-        print(opt.env + ' train [%d: %d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(epoch, i, len_dataset/opt.batchSize, emd1.mean().item(), emd2.mean().item(), expansion_penalty.mean().item()))
+        if i % 500 == 0:
+            print(opt.env + ' train [%d: %d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(epoch, i, len_dataset/opt.batchSize, emd1.mean().item(), emd2.mean().item(), expansion_penalty.mean().item()))
 
         # VALIDATION
         if i % int((len_dataset//opt.batchSize)/3) == 0 and i!=0:
@@ -154,7 +153,10 @@ for epoch in range(opt.nepoch):
                     gt = gt.float().cuda()
                     input = input.transpose(2,1).contiguous()
                     output1, output2, emd1, emd2, expansion_penalty  = network(input, gt.contiguous(), 0.004, 3000)
-                    val_loss.update(emd2.mean().item())
+                    loss_net = emd1.mean() + emd2.mean() + expansion_penalty.mean() * 0.1 
+                    #print(loss_net.item())
+                    #val_loss.update(emd2.mean().item())
+                    val_loss.update(loss_net.item())
                     idx = random.randint(0, input.size()[0] - 1)
                     print(opt.env + ' val [%d: %d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(epoch, i_val, len_valset/opt.batchSize, emd1.mean().item(), emd2.mean().item(), expansion_penalty.mean().item()))
             val_curve.append(val_loss.avg)

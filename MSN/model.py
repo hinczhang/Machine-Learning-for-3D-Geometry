@@ -98,7 +98,7 @@ class MSN(nn.Module):
         self.expansion = expansion.expansionPenaltyModule()
         
 
-        self.conv = nn.Conv1d(1920, 1024, 1)
+        self.conv = nn.Conv1d(1152, 1024, 1)
         self.bn = nn.BatchNorm1d(1024)
 
         self.conv_ = nn.Conv1d(2048, 1024, 1)
@@ -114,19 +114,19 @@ class MSN(nn.Module):
         trans = self.stn(x)
         R = torch.bmm(x.transpose(2,1), trans)
 
-        indices = torch.randperm(R.shape[1])[:640]
+        indices = torch.randperm(R.shape[1])[:384]
         R = R[:,indices,:]
         R = R.transpose(2,1)
         
         R = R.reshape(self.batch_size, -1)
-        R = R.unsqueeze(0).transpose(2,1)
-        R = self.leakyrelu(self.bn(self.conv(R)))[0]
-        R = R.transpose(0,1)
+        #R = R.unsqueeze(0).transpose(2,1)
+        R = self.leakyrelu(self.bn(self.conv(R.unsqueeze(2)))).squeeze(2)
+        #R = R.transpose(0,1)
         
         x = self.encoder(x)
         
         x = torch.cat((R,x), 1)
-        x = self.leakyrelu(self.bn_(self.conv_(x.transpose(0,1).unsqueeze(0)))[0].transpose(0,1))
+        x = self.leakyrelu(self.bn_(self.conv_(x.unsqueeze(2)))).squeeze(2)
         
         outs = []
         for i in range(0,self.n_primitives):

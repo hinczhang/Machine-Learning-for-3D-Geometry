@@ -7,6 +7,7 @@ import numpy as np
 import torch.nn.functional as F
 import sys
 from SoftPool import soft_pool2d, SoftPool2d
+#from softpool import SoftPoolFeat
 from LocallyConnected2d import LocallyConnected2d
 sys.path.append("./expansion_penalty/")
 import expansion_penalty_module as expansion
@@ -25,8 +26,8 @@ class STN3d(nn.Module):
         self.fc3 = nn.Linear(128, 9)
         self.leakyrelu = nn.LeakyReLU(0.2)
         
-        self.dropout1 = nn.Dropout(0.5)
-        self.dropout2 = nn.Dropout(0.5)
+        self.dropout1 = nn.Dropout(0.2)
+        self.dropout2 = nn.Dropout(0.1)
 
     def forward(self, x):
         batchsize = x.size()[0]
@@ -64,7 +65,7 @@ class PseudoSPNet(nn.Module):
         self.bn1 = torch.nn.BatchNorm1d(64)
         self.bn2 = torch.nn.BatchNorm1d(128)
         self.bn3 = torch.nn.BatchNorm1d(1024)
-        #self.bn4 = torch.nn.BatchNorm1d(1024)
+        self.bn4 = torch.nn.BatchNorm1d(1024)
         #self.bn5 = torch.nn.BatchNorm1d(1024)
         '''
         self.bn4 = torch.nn.BatchNorm1d(128)
@@ -72,6 +73,7 @@ class PseudoSPNet(nn.Module):
         self.bn6 = torch.nn.BatchNorm1d(1024)
         '''
         self.pool = SoftPool2d(kernel_size=(1,1), stride=(2,2))
+        #self.pool = SoftPoolFeat(num_points = 4096)
         self.localConv = LocallyConnected2d(batch_size,512,1024,5000,False)
         
         self.deconv1 = torch.nn.ConvTranspose2d(1, self.batch_size, 1)
@@ -94,6 +96,7 @@ class PseudoSPNet(nn.Module):
         x = self.leakyrelu(self.bn2(self.conv2(x)))
         x = self.leakyrelu(self.bn3(self.conv3(x)))
         x = self.pool(x)
+        #x, _, _ = self.pool(x=x, x_seg=None)
 
         x, _ = torch.sort(x, descending=True, dim = 1)
         trucated_size = int(x.shape[1]//x.shape[0])
@@ -102,7 +105,7 @@ class PseudoSPNet(nn.Module):
             t_x = torch.cat((t_x, pts[:trucated_size]))
         x = t_x
         x = self.localConv(x)
-        
+        #x = self.bn4(x)
         '''
         print('after conv: ', x.shape)
         x = x.transpose(2,0)
@@ -110,7 +113,6 @@ class PseudoSPNet(nn.Module):
         x = x.transpose(2,0)
         print('after pool: ', x.shape)
         '''
-        
         x = self.deconv1(x.unsqueeze(0))[0]
         #x = self.bn5(x)
         '''
