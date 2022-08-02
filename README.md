@@ -7,6 +7,6 @@ In the `SoftPool` dir and the `MSN` dir, there are two `README.md`, Please read 
 ## 2. Dataset
 In the `MSN/data_pre`, you will find the way to handle the data. Please prepare a large space (better about 100 GB) for it.  
 A GPU environment is preferred as blender may accelerate via GPU.  
-Wait to publish ...
-## 3. Result
 Will not be published due to large data size. Please view `./MSN/data_pre` to view the details.
+## 3. Result
+Please see the attach slides and reports.
