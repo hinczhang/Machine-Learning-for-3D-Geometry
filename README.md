@@ -10,3 +10,7 @@ A GPU environment is preferred as blender may accelerate via GPU.
 Will not be published due to large data size. Please view `./MSN/data_pre` to view the details.
 ## 3. Result
 Please see the attach slides and reports.
+## 4. Our model
+Truncated SoftPool and Regional Convolution:  
+![TruncatedSoftPool](https://user-images.githubusercontent.com/70082542/183311310-95c16a86-e278-4efe-a9c7-0d6a63bd9d12.png)
+
