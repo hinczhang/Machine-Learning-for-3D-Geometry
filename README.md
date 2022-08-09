@@ -1,4 +1,5 @@
 # Machine-Learning-for-3D-Geometry
+please view our slides here: <a href="Final%20Presentation%20-%20ML3D.pdf.pdf"><img src="https://img.shields.io/badge/PDF-Slide-brightgreen"/></a>  
 It is the course of **Machine Learning for 3D Geometry (IN2392)** from TU Munich.  
 ## 1. How to run this project?
 In the `SoftPool` dir and the `MSN` dir, there are two `README.md`, Please read them:  
